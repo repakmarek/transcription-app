@@ -9,15 +9,15 @@ uploaded_file = st.file_uploader("Nahraj audio", type=["mp3", "m4a", "wav"])
 if uploaded_file:
     st.write("Spracovávam...")
 
-    # uloženie súboru
-import tempfile
+    import tempfile
 
-with tempfile.NamedTemporaryFile(delete=False, suffix=".m4a") as tmp_file:
-    tmp_file.write(uploaded_file.read())
-    temp_audio_path = tmp_file.name
+    # uloženie do dočasného súboru
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".m4a") as tmp_file:
+        tmp_file.write(uploaded_file.read())
+        temp_audio_path = tmp_file.name
 
-model = whisper.load_model("small")
-result = model.transcribe(temp_audio_path, language="sk")
+    model = whisper.load_model("small")
+    result = model.transcribe(temp_audio_path, language="sk")
 
     segments = result["segments"]
 
