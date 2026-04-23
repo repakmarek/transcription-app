@@ -10,11 +10,14 @@ if uploaded_file:
     st.write("Spracovávam...")
 
     # uloženie súboru
-    with open("audio.m4a", "wb") as f:
-        f.write(uploaded_file.read())
+import tempfile
 
-    model = whisper.load_model("small")
-    result = model.transcribe("audio.m4a", language="sk")
+with tempfile.NamedTemporaryFile(delete=False, suffix=".m4a") as tmp_file:
+    tmp_file.write(uploaded_file.read())
+    temp_audio_path = tmp_file.name
+
+model = whisper.load_model("small")
+result = model.transcribe(temp_audio_path, language="sk")
 
     segments = result["segments"]
 
