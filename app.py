@@ -61,12 +61,22 @@ if uploaded_file:
         st.subheader("📄 Prepis")
         st.write(text)
 
-        # download CSV
-        csv = df.to_csv(index=False).encode("utf-8")
+       # 🔥 lepší Excel export
+df_excel = pd.DataFrame({
+    "čas": [f"{i}" for i in range(len(data))],
+    "text": [d["text"] for d in data]
+})
 
-        st.download_button(
-            "Stiahnuť CSV",
-            csv,
-            "transcript.csv",
-            "text/csv"
-        )
+excel_file = df_excel.to_excel(index=False, engine='openpyxl')
+
+import io
+output = io.BytesIO()
+with pd.ExcelWriter(output, engine='openpyxl') as writer:
+    df_excel.to_excel(writer, index=False)
+
+st.download_button(
+    "Stiahnuť Excel",
+    output.getvalue(),
+    "transcript.xlsx",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+)
