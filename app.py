@@ -63,14 +63,13 @@ if uploaded_file:
 
        # 🔥 lepší Excel export
 df_excel = pd.DataFrame({
-    "čas": [f"{i}" for i in range(len(data))],
+    "cas": [f"{i}" for i in range(len(data))],
     "text": [d["text"] for d in data]
 })
 
-excel_file = df_excel.to_excel(index=False, engine='openpyxl')
-
 import io
 output = io.BytesIO()
+
 with pd.ExcelWriter(output, engine='openpyxl') as writer:
     df_excel.to_excel(writer, index=False)
 
