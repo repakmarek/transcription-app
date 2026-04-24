@@ -3,26 +3,16 @@ import pandas as pd
 from openai import OpenAI
 import tempfile
 import os
+import io
 
 # API key zo Secrets
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 st.title("🎤 Prepis rozhovoru (coach)")
 
-st.write("""
-👉 Nahraj audio z coaching session  
-👉 Počkaj pár sekúnd  
-👉 Stiahni prepis
-""")
-
 uploaded_file = st.file_uploader("Nahraj audio", type=["mp3", "m4a", "wav"])
 
 if uploaded_file:
-
-    # limit veľkosti (ochrana)
-    if uploaded_file.size > 10 * 1024 * 1024:
-        st.error("Súbor je príliš veľký. Skús kratšie audio (do 10MB).")
-        st.stop()
 
     with st.spinner("⏳ Prepisujem audio..."):
 
@@ -31,7 +21,7 @@ if uploaded_file:
             tmp_file.write(uploaded_file.read())
             temp_audio_path = tmp_file.name
 
-        # 🔥 TRANSCRIPTION
+        # transcription
         try:
             with open(temp_audio_path, "rb") as audio_file:
                 transcript = client.audio.transcriptions.create(
@@ -39,12 +29,12 @@ if uploaded_file:
                     file=audio_file
                 )
         except Exception as e:
-            st.error(f"Chyba pri prepisovaní: {e}")
+            st.error(f"Chyba: {e}")
             st.stop()
 
         text = transcript.text
 
-        # 🔥 jednoduché rozdelenie na vety
+        # rozdelenie na vety
         sentences = text.split(". ")
 
         data = []
@@ -57,25 +47,21 @@ if uploaded_file:
         df = pd.DataFrame(data)
 
         st.success("Hotovo ✅")
-
-        st.subheader("📄 Prepis")
         st.write(text)
 
-       # 🔥 lepší Excel export
-df_excel = pd.DataFrame({
-    "cas": [f"{i}" for i in range(len(data))],
-    "text": [d["text"] for d in data]
-})
+        # Excel export
+        df_excel = pd.DataFrame({
+            "cas": list(range(len(data))),
+            "text": [d["text"] for d in data]
+        })
 
-import io
-output = io.BytesIO()
+        output = io.BytesIO()
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            df_excel.to_excel(writer, index=False)
 
-with pd.ExcelWriter(output, engine='openpyxl') as writer:
-    df_excel.to_excel(writer, index=False)
-
-st.download_button(
-    "Stiahnuť Excel",
-    output.getvalue(),
-    "transcript.xlsx",
-    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-)
+        st.download_button(
+            "Stiahnuť Excel",
+            output.getvalue(),
+            "transcript.xlsx",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
