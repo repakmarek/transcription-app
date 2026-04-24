@@ -42,7 +42,16 @@ text = transcript.text
         text = transcript.text
 
         # jednoduchý output
-        df = pd.DataFrame([{"text": text}])
+        sentences = text.split(". ")
+
+data = []
+for i, s in enumerate(sentences):
+    data.append({
+        "id": i,
+        "text": s.strip()
+    })
+
+df = pd.DataFrame(data)
 
         st.success("Hotovo ✅")
         st.subheader("📄 Prepis")
