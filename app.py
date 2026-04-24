@@ -26,12 +26,18 @@ if uploaded_file:
             tmp_file.write(uploaded_file.read())
             temp_audio_path = tmp_file.name
 
-        # 🔥 OpenAI transcription
-        with open(temp_audio_path, "rb") as audio_file:
-            transcript = client.audio.transcriptions.create(
-                model="gpt-4o-mini-transcribe",
-                file=audio_file
-            )
+      # 🔥 OpenAI transcription
+try:
+    with open(temp_audio_path, "rb") as audio_file:
+        transcript = client.audio.transcriptions.create(
+            model="gpt-4o-mini-transcribe",
+            file=audio_file
+        )
+except Exception as e:
+    st.error(f"Chyba: {e}")
+    st.stop()
+
+text = transcript.text
 
         text = transcript.text
 
