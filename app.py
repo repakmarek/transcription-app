@@ -5,7 +5,7 @@ import tempfile
 import os
 import io
 
-# API key zo Secrets
+# API key
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 st.title("🎤 Prepis rozhovoru (coach)")
@@ -14,66 +14,65 @@ uploaded_file = st.file_uploader("Nahraj audio", type=["mp3", "m4a", "wav"])
 
 if uploaded_file:
 
-    # limit (API limit ochrana)
-    if uploaded_file.size > 25 * 1024 * 1024:
-        st.error("Audio je príliš veľké. Skús kratší súbor (do ~25MB).")
-        st.stop()
+    # načítanie bytes
+    audio_bytes = uploaded_file.read()
 
-audio_bytes = uploaded_file.read()
+    # rozdelenie na časti (5MB)
+    chunk_size = 5 * 1024 * 1024
+    chunks = [audio_bytes[i:i+chunk_size] for i in range(0, len(audio_bytes), chunk_size)]
 
-chunk_size = 5 * 1024 * 1024  # 5MB
-chunks = [audio_bytes[i:i+chunk_size] for i in range(0, len(audio_bytes), chunk_size)]
+    st.write(f"Počet častí: {len(chunks)}")
 
-st.write(f"Počet častí: {len(chunks)}")
-    
+    full_text = ""
+
     with st.spinner("⏳ Prepisujem audio..."):
 
-        # uloženie do temp súboru
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".m4a") as tmp_file:
-            tmp_file.write(uploaded_file.read())
-            temp_audio_path = tmp_file.name
+        for i, chunk in enumerate(chunks):
 
-        # transcription
-        try:
-            with open(temp_audio_path, "rb") as audio_file:
-                transcript = client.audio.transcriptions.create(
-                    model="gpt-4o-mini-transcribe",
-                    file=audio_file
-                )
-        except Exception as e:
-            st.error(f"Chyba: {e}")
-            st.stop()
+            st.write(f"Spracovávam časť {i+1}/{len(chunks)}")
 
-        text = transcript.text
+            # uloženie chunku
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".m4a") as tmp_file:
+                tmp_file.write(chunk)
+                temp_audio_path = tmp_file.name
 
-        # rozdelenie na vety
-        sentences = text.split(". ")
+            try:
+                with open(temp_audio_path, "rb") as audio_file:
+                    transcript = client.audio.transcriptions.create(
+                        model="gpt-4o-mini-transcribe",
+                        file=audio_file
+                    )
 
-        data = []
-        for i, s in enumerate(sentences):
-            data.append({
-                "id": i,
-                "text": s.strip()
-            })
+                full_text += transcript.text + " "
 
-        df = pd.DataFrame(data)
+            except Exception as e:
+                st.error(f"Chyba pri časti {i+1}: {e}")
+                st.stop()
 
-        st.success("Hotovo ✅")
-        st.write(text)
+    # rozdelenie na vety
+    sentences = full_text.split(". ")
 
-        # Excel export
-        df_excel = pd.DataFrame({
-            "cas": list(range(len(data))),
-            "text": [d["text"] for d in data]
+    data = []
+    for i, s in enumerate(sentences):
+        data.append({
+            "id": i,
+            "text": s.strip()
         })
 
-        output = io.BytesIO()
-        with pd.ExcelWriter(output, engine='openpyxl') as writer:
-            df_excel.to_excel(writer, index=False)
+    df = pd.DataFrame(data)
 
-        st.download_button(
-            "Stiahnuť Excel",
-            output.getvalue(),
-            "transcript.xlsx",
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
+    st.success("Hotovo ✅")
+    st.subheader("📄 Prepis")
+    st.write(full_text)
+
+    # Excel export
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False)
+
+    st.download_button(
+        "Stiahnuť Excel",
+        output.getvalue(),
+        "transcript.xlsx",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
