@@ -19,6 +19,13 @@ if uploaded_file:
         st.error("Audio je príliš veľké. Skús kratší súbor (do ~25MB).")
         st.stop()
 
+audio_bytes = uploaded_file.read()
+
+chunk_size = 5 * 1024 * 1024  # 5MB
+chunks = [audio_bytes[i:i+chunk_size] for i in range(0, len(audio_bytes), chunk_size)]
+
+st.write(f"Počet častí: {len(chunks)}")
+    
     with st.spinner("⏳ Prepisujem audio..."):
 
         # uloženie do temp súboru
