@@ -1,4 +1,6 @@
 streamlit
+openai-whisper
+google-generativeai
 pandas
-openai
 openpyxl
+xlsxwriter
