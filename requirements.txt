@@ -1,6 +1,5 @@
 streamlit
 openai-whisper
+torch
+ffmpeg-python
 google-generativeai
-pandas
-openpyxl
-xlsxwriter
