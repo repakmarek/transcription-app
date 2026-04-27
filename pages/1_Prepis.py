@@ -6,7 +6,7 @@ import google.generativeai as genai
 st.title("Prepis audia")
 
 # API KEY (zatiaľ natvrdo, potom zlepšíme)
-genai.configure(api_key="PASTE_YOUR_GEMINI_API_KEY")
+genai.configure(api_key="AIzaSyCN_lGaxahKHXGrKW8cX60AXZIskQbXa3E")
 
 # upload
 audio_file = st.file_uploader("Nahraj audio", type=["mp3", "wav", "m4a"])
